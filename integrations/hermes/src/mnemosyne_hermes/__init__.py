@@ -137,7 +137,7 @@ except Exception as _persona_import_exc:  # pragma: no cover - graceful import f
         """Fallback used only when mnemosyne core is missing or too old."""
 
         PERSONA_ENABLED = False
-        PERSONA_FILE = Path.home() / ".hermes" / "memory" / "persona.md"
+        PERSONA_FILE = Path.home() / ".hermes" / "memories" / "mnemosyne" / "persona.md"
         PERSONA_TOKEN_CAP = 1500
 
         def _persona_block(self) -> str:
@@ -1482,9 +1482,7 @@ class MnemosyneMemoryProvider(HermesPersonaPromptMixin, MemoryProvider):
             else:
                 BeamMemory = _get_beam_class()
                 db_path = (
-                    Path(self._hermes_home) / "mnemosyne" / "data" / "mnemosyne.db"
-                    if self._hermes_home
-                    else None
+                    _pleasant_paths().db_path(self._hermes_home)
                 )
                 beam_kwargs = {"session_id": self._session_id, "db_path": db_path}
                 if kwargs.get("channel_id"):
@@ -2437,7 +2435,7 @@ class MnemosyneMemoryProvider(HermesPersonaPromptMixin, MemoryProvider):
         if self._surface_beam is not None:
             return
         BeamMemory = _get_beam_class()
-        shared_path = self._shared_surface_path or (Path.home() / ".mnemosyne" / "data" / "shared" / "mnemosyne.db")
+        shared_path = self._shared_surface_path or _pleasant_paths().shared_db_path(self._hermes_home)
         shared_path.parent.mkdir(parents=True, exist_ok=True)
         self._shared_surface_path = shared_path
         self._surface_beam = BeamMemory(session_id="hermes_shared_surface", db_path=shared_path)
@@ -3711,3 +3709,9 @@ def _get_persona_handler(tool_name: str):
                 })
         return _persona_adapter.handle_tool_call(tool_name, args)
     return _handler
+
+
+def _pleasant_paths():
+    """Import core paths only when storage is actually needed."""
+    from mnemosyne import paths
+    return paths

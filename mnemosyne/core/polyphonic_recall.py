@@ -27,6 +27,8 @@ Building on:
 # being defeated by `np.ndarray = None` evaluation at class-body load.
 from __future__ import annotations
 
+from mnemosyne import paths as _paths
+
 import json
 import os
 import sqlite3
@@ -112,7 +114,7 @@ class PolyphonicRecallEngine:
             resources and risks WAL-readback inconsistency under
             concurrent writers.
         """
-        self.db_path = db_path or Path.home() / ".hermes" / "mnemosyne" / "data" / "mnemosyne.db"
+        self.db_path = db_path or _paths.db_path()
         self.conn = conn  # may be None -- voices fall back to per-call open
 
         # Initialize subsystems. Each accepts an optional conn= since

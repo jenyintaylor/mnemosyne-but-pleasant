@@ -25,12 +25,14 @@ See:
 - `.hermes/ledger/memory-contract.md` (E6) — ledger row + audit trail
 """
 
+from mnemosyne import paths as _paths
+
 import sqlite3
 from pathlib import Path
 from typing import List, Dict, Optional
 
 
-DEFAULT_DB = Path.home() / ".hermes" / "mnemosyne" / "data" / "triples.db"
+DEFAULT_DB = _paths.data_dir() / 'triples.db'
 
 
 # ---------------------------------------------------------------------------

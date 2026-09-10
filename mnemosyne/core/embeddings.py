@@ -5,6 +5,8 @@ Falls back to keyword-only if neither is available.
 """
 from __future__ import annotations
 
+from mnemosyne import paths as _paths
+
 import json
 import logging
 import os
@@ -56,14 +58,7 @@ _FASTEMBED_AVAILABLE = _is_fastembed_available()
 # separate ~/.hermes directory when a user relocates HERMES_HOME (e.g. to
 # ~/.config/hermes). Matches the HERMES_HOME handling already used elsewhere
 # in the package (see mcp_tools.py).
-_FASTEMBED_CACHE_DIR = os.environ.get(
-    "MNEMOSYNE_FASTEMBED_CACHE_DIR",
-    os.path.join(
-        os.environ.get("HERMES_HOME", os.path.expanduser("~/.hermes")),
-        "cache",
-        "fastembed",
-    ),
-)
+_FASTEMBED_CACHE_DIR = str(_paths.fastembed_cache_dir())
 
 # --- OpenAI-compatible API ---
 # Mnemosyne embedding config is independent of general OpenRouter/OpenAI settings.

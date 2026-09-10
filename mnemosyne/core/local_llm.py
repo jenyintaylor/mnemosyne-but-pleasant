@@ -9,6 +9,8 @@ Model cache: ~/.hermes/mnemosyne/models/
 Default model: openbmb/MiniCPM5-1B-GGUF (Q4_K_M, ~656MB)
 """
 
+from mnemosyne import paths as _paths
+
 import logging
 import os
 import sys
@@ -19,7 +21,7 @@ from typing import List, Optional
 # --- Config ------------------------------------------------------------------
 DEFAULT_MODEL_REPO = "openbmb/MiniCPM5-1B-GGUF"
 DEFAULT_MODEL_FILE = "MiniCPM5-1B-Q4_K_M.gguf"
-MODEL_CACHE_DIR = Path.home() / ".hermes" / "mnemosyne" / "models"
+MODEL_CACHE_DIR = _paths.model_cache_dir()
 
 logger = logging.getLogger(__name__)
 
@@ -47,7 +49,7 @@ _env_cache_dir = os.environ.get("MNEMOSYNE_MODEL_CACHE_DIR", "")
 # The error message below reads differently in each case.
 MODEL_CACHE_DIR_FROM_ENV = bool(_env_cache_dir.strip())
 if MODEL_CACHE_DIR_FROM_ENV:
-    MODEL_CACHE_DIR = Path(_env_cache_dir).expanduser()
+    MODEL_CACHE_DIR = _paths.model_cache_dir()
 
 # Remote API config
 LLM_BASE_URL = os.environ.get("MNEMOSYNE_LLM_BASE_URL", "").rstrip("/")
@@ -240,6 +242,11 @@ def _load_llm():
     Returns the loaded model/LLM instance, or None if no backend works.
     """
     global _llm_instance, _llm_backend, _llm_available
+
+    # Local inference is an explicit opt-in, separate from host/remote LLMs.
+    if not LLM_ENABLED or not _local_llm_enabled():
+        _llm_available = False
+        return None
 
     if _llm_instance is not None:
         return _llm_instance
@@ -794,3 +801,9 @@ def summarize_memories(memories: List[str], source: str = "") -> Optional[str]:
     """Public summary API; malformed reasoning degrades to no LLM output."""
     summary = _summarize_memories(memories, source=source)
     return summary if isinstance(summary, str) else None
+
+
+def _local_llm_enabled() -> bool:
+    """Local GGUF inference/downloads are disabled by default in this fork."""
+    from mnemosyne.core.config import get_config
+    return get_config().get_bool("local_llm_enabled", False)

@@ -35,6 +35,8 @@ See ``docs/rfc/0003-media-moments.md`` for the design and the corrections
 this module implements.
 """
 
+from mnemosyne import paths as _paths
+
 import hashlib
 import json
 import os
@@ -111,7 +113,7 @@ def _default_db_path() -> Path:
     """Resolved at call time so ``MNEMOSYNE_DATA_DIR`` is honoured without
     importing beam (which would be a circular import)."""
     data_dir = os.environ.get("MNEMOSYNE_DATA_DIR")
-    base = Path(data_dir) if data_dir else (Path.home() / ".hermes" / "mnemosyne" / "data")
+    base = Path(data_dir) if data_dir else (_paths.data_dir())
     return base / "mnemosyne.db"
 
 

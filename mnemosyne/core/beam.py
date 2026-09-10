@@ -15,6 +15,8 @@ Hybrid ranking: 50% vector + 30% FTS rank + 20% importance.
 
 from __future__ import annotations
 
+from mnemosyne import paths as _paths
+
 import contextlib
 import logging
 import sqlite3
@@ -323,8 +325,8 @@ _DEFAULT_ROOT = Path(
     os.environ.get("HERMES_HOME")
     or (Path(os.environ["HOME"]) / ".hermes" if os.environ.get("HOME") else Path.home() / ".hermes")
 )
-DEFAULT_DATA_DIR = _DEFAULT_ROOT / "mnemosyne" / "data"
-DEFAULT_DB_PATH = DEFAULT_DATA_DIR / "mnemosyne.db"
+DEFAULT_DATA_DIR = _paths.data_dir()
+DEFAULT_DB_PATH = _paths.db_path()
 
 _thread_local = threading.local()
 
@@ -351,21 +353,14 @@ def _env_truthy(name: str) -> bool:
 # Set MNEMOSYNE_BEAM_OPTIMIZATIONS=1 to activate for BEAM benchmarking only.
 _BEAM_MODE = _env_truthy("MNEMOSYNE_BEAM_OPTIMIZATIONS")
 
-if os.environ.get("MNEMOSYNE_DATA_DIR"):
-    DEFAULT_DATA_DIR = Path(os.environ.get("MNEMOSYNE_DATA_DIR"))
-    DEFAULT_DB_PATH = DEFAULT_DATA_DIR / "mnemosyne.db"
 
 
 def _default_data_dir() -> Path:
-    """Return the current default data directory, honoring runtime env changes."""
-    if os.environ.get("MNEMOSYNE_DATA_DIR"):
-        return Path(os.environ["MNEMOSYNE_DATA_DIR"])
-    return DEFAULT_DATA_DIR
+    return _paths.data_dir()
 
 
 def _default_db_path() -> Path:
-    """Return the current default DB path, honoring runtime env changes."""
-    return _default_data_dir() / "mnemosyne.db"
+    return _paths.db_path()
 
 # Re-export the constant resolved at embeddings module load. The unknown-model
 # ValueError already fires there (binary_vectors imports EMBEDDING_DIM from

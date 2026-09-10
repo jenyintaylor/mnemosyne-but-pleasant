@@ -3,13 +3,15 @@ Mnemosyne Cost Logger
 Tracks memory injection costs over time for benchmarking.
 """
 
+from mnemosyne import paths as _paths
+
 import sqlite3
 from datetime import datetime
 from pathlib import Path
 from typing import Dict
 
-DEFAULT_LOG_DIR = Path.home() / ".mnemosyne" / "data"
-DEFAULT_LOG_DB = DEFAULT_LOG_DIR / "cost_log.db"
+DEFAULT_LOG_DIR = _paths.log_dir()
+DEFAULT_LOG_DB = _paths.log_dir() / "cost_log.db"
 
 
 def _get_conn(db_path: Path = None) -> sqlite3.Connection:

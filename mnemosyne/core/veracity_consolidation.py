@@ -22,6 +22,8 @@ Conflict resolution:
 - Consolidation: periodic synthesis of high-confidence facts
 """
 
+from mnemosyne import paths as _paths
+
 import contextlib
 import hashlib
 import logging
@@ -283,7 +285,7 @@ class VeracityConsolidator:
             self.conn = conn
             self.db_path = db_path or Path(":memory:")
         else:
-            self.db_path = db_path or Path.home() / ".hermes" / "mnemosyne" / "data" / "mnemosyne.db"
+            self.db_path = db_path or _paths.db_path()
             self.conn = sqlite3.connect(str(self.db_path), check_same_thread=False)
             # Apply the same PRAGMA settings BeamMemory's _get_connection
             # uses (journal_mode per MNEMOSYNE_JOURNAL_MODE, busy_timeout=5000ms). Required for

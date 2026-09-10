@@ -6,6 +6,8 @@ Command-line interface for the Mnemosyne memory system.
 All commands use the v2 BEAM architecture (Mnemosyne/BeamMemory).
 """
 
+from mnemosyne import paths as _paths
+
 import os
 import sys
 import json
@@ -14,17 +16,7 @@ from pathlib import Path, PureWindowsPath
 from typing import NoReturn
 
 def _default_data_dir() -> str:
-    """Resolve the default data directory used by the CLI.
-
-    Keep the standalone CLI aligned with Hermes integrations:
-    MNEMOSYNE_DATA_DIR wins, then HERMES_HOME/mnemosyne/data, then the
-    historical ~/.hermes/mnemosyne/data fallback.
-    """
-    if data_dir := os.environ.get("MNEMOSYNE_DATA_DIR"):
-        return data_dir
-    if hermes_home := os.environ.get("HERMES_HOME"):
-        return str(Path(hermes_home).expanduser() / "mnemosyne" / "data")
-    return str(Path.home() / ".hermes" / "mnemosyne" / "data")
+    return str(_paths.data_dir())
 
 
 DATA_DIR = _default_data_dir()
@@ -1155,7 +1147,7 @@ def cmd_backups_list(args):
     backups = list_backups(backup_dir=backup_dir)
     if not backups:
         print("No backups found.")
-        print(f"  Backups directory: {backup_dir or Path.home() / '.mnemosyne' / 'backups'}")
+        print(f"  Backups directory: {backup_dir or _paths.backup_dir()}")
         return
     print(f"\nBackups ({len(backups)} total):\n")
     for b in backups:

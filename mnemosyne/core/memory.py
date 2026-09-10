@@ -11,6 +11,8 @@ Now upgraded with BEAM architecture:
 - scratchpad: temporary agent reasoning workspace
 """
 
+from mnemosyne import paths as _paths
+
 import sqlite3
 import json
 import hashlib
@@ -39,8 +41,8 @@ _DEFAULT_ROOT = Path(
     os.environ.get("HERMES_HOME")
     or (Path(os.environ["HOME"]) / ".hermes" if os.environ.get("HOME") else Path.home() / ".hermes")
 )
-DEFAULT_DATA_DIR = _DEFAULT_ROOT / "mnemosyne" / "data"
-DEFAULT_DB_PATH = DEFAULT_DATA_DIR / "mnemosyne.db"
+DEFAULT_DATA_DIR = _paths.data_dir()
+DEFAULT_DB_PATH = _paths.db_path()
 
 # The portable JSON format carries these physical tables through the named
 # sections below. Do not assume a represented table is lossless: this mapping
@@ -188,21 +190,14 @@ def _export_completeness(conn: sqlite3.Connection, *, include_sync_events: bool)
     }
 
 # Allow override via environment
-if os.environ.get("MNEMOSYNE_DATA_DIR"):
-    DEFAULT_DATA_DIR = Path(os.environ.get("MNEMOSYNE_DATA_DIR"))
-    DEFAULT_DB_PATH = DEFAULT_DATA_DIR / "mnemosyne.db"
 
 
 def _default_data_dir() -> Path:
-    """Return the current default data directory, honoring runtime env changes."""
-    if os.environ.get("MNEMOSYNE_DATA_DIR"):
-        return Path(os.environ["MNEMOSYNE_DATA_DIR"])
-    return DEFAULT_DATA_DIR
+    return _paths.data_dir()
 
 
 def _default_db_path() -> Path:
-    """Return the current default DB path, honoring runtime env changes."""
-    return _default_data_dir() / "mnemosyne.db"
+    return _paths.db_path()
 
 
 def _get_connection(db_path = None) -> sqlite3.Connection:

@@ -54,6 +54,8 @@ facts still belong in triples; free-text identity cards get a deduped
 authoritative slot here.
 """
 
+from mnemosyne import paths as _paths
+
 import os
 import sqlite3
 from datetime import datetime
@@ -67,7 +69,7 @@ from typing import List, Dict, Optional
 # honored without importing beam (avoids a circular import).
 def _default_db_path() -> Path:
     data_dir = os.environ.get("MNEMOSYNE_DATA_DIR")
-    base = Path(data_dir) if data_dir else (Path.home() / ".hermes" / "mnemosyne" / "data")
+    base = Path(data_dir) if data_dir else (_paths.data_dir())
     return base / "mnemosyne.db"
 
 

@@ -2022,7 +2022,7 @@ class MnemosyneMemoryProvider(HermesPersonaPromptMixin, MemoryProvider):
                 )
             else:
                 BeamMemory = _get_beam_class()
-                self._beam = BeamMemory(session_id=self._session_id)
+                self._beam = BeamMemory(session_id=self._session_id, db_path=_pleasant_paths().db_path(self._hermes_home))
                 logger.info("Mnemosyne initialized: session=%s", self._session_id)
 
         except Exception as e:
@@ -2979,7 +2979,7 @@ class MnemosyneMemoryProvider(HermesPersonaPromptMixin, MemoryProvider):
         if self._surface_beam is not None:
             return
         BeamMemory = _get_beam_class()
-        shared_path = self._shared_surface_path or (_mnemosyne_root / "data" / "shared" / "mnemosyne.db")
+        shared_path = self._shared_surface_path or _pleasant_paths().shared_db_path(self._hermes_home)
         shared_path.parent.mkdir(parents=True, exist_ok=True)
         self._shared_surface_path = shared_path
         self._surface_beam = BeamMemory(session_id="hermes_shared_surface", db_path=shared_path)
@@ -4039,3 +4039,9 @@ def register(ctx):
             "injection, tools) will be unavailable. Check hermes_plugin module.",
             _e,
         )
+
+
+def _pleasant_paths():
+    """Import core paths only when storage is actually needed."""
+    from mnemosyne import paths
+    return paths

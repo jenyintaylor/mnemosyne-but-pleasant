@@ -11,6 +11,8 @@ Usage:
 All imports are guarded — this module loads safely even if mcp is not installed.
 """
 
+from mnemosyne import paths as _paths
+
 from typing import TYPE_CHECKING, Dict, Any, List, TypeAlias
 import json
 import logging
@@ -153,12 +155,11 @@ _GET_STATS_SCHEMA = _SchemaProxy("mnemosyne_stats")
 # ---------------------------------------------------------------------------
 
 _HERMES_HOME = os.environ.get("HERMES_HOME", str(Path.home() / ".hermes"))
-_MNEMOSYNE_HOME = os.environ.get("MNEMOSYNE_HOME", str(Path(_HERMES_HOME) / "mnemosyne"))
+_MNEMOSYNE_HOME = os.environ.get("MNEMOSYNE_HOME", str(_paths.home()))
 
 
 def _shared_db_path() -> Path:
-    """Return the shared surface DB path."""
-    return Path(os.environ.get("MNEMOSYNE_SHARED_DB_PATH", str(Path(_MNEMOSYNE_HOME) / "data" / "shared" / "mnemosyne.db")))
+    return _paths.shared_db_path()
 
 
 def _create_instance(session_id: str = None, author_id: str = None,

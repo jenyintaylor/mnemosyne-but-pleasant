@@ -10,6 +10,8 @@ Never includes memory content, user queries, or API keys.
 Supports --fix mode: auto-installs missing dependencies.
 """
 
+from mnemosyne import paths as _paths
+
 import importlib.metadata  # noqa: F401  (monkeypatched by tests; runtime_diagnostics calls .version)
 import json
 import os
@@ -20,10 +22,7 @@ from pathlib import Path
 from mnemosyne.runtime_diagnostics import collect_runtime_diagnostics
 
 def _default_log_dir() -> Path:
-    """Resolve diagnostics beside the active Hermes home."""
-    hermes_home = os.environ.get("HERMES_HOME")
-    base = Path(hermes_home).expanduser() if hermes_home else Path.home() / ".hermes"
-    return base / "mnemosyne" / "logs"
+    return _paths.log_dir()
 
 
 LOG_DIR = _default_log_dir()

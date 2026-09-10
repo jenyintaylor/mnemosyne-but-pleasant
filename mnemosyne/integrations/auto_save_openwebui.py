@@ -32,6 +32,8 @@ Configuration via environment variables:
 Dependencies: None beyond mnemosyne-memory itself (uses stdlib).
 """
 
+from mnemosyne import paths as _paths
+
 import argparse
 import asyncio
 import json
@@ -56,7 +58,7 @@ DEFAULT_OPENWEBUI_URL = "http://localhost:3000"
 
 # Track processed message IDs to avoid duplicates
 _PROCESSED_IDS: set[str] = set()
-_PROCESSED_FILE = Path.home() / ".mnemosyne" / "openwebui_saved_ids.json"
+_PROCESSED_FILE = _paths.home() / 'openwebui_saved_ids.json'
 
 
 def _load_processed_ids():
@@ -121,7 +123,7 @@ class MemorySaver:
     ):
         db_path = data_dir or os.environ.get(
             "MNEMOSYNE_DATA_DIR",
-            str(Path.home() / ".hermes" / "mnemosyne" / "data"),
+            str(_paths.data_dir()),
         )
         db_dir = Path(db_path)
         db_dir.mkdir(parents=True, exist_ok=True)

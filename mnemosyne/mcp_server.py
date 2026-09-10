@@ -48,6 +48,8 @@ Security note (S1, 2026-05-12):
     docs/cli-reference.md for the full contract.
 """
 
+from mnemosyne import paths as _paths
+
 import hmac
 import os
 import json
@@ -530,7 +532,7 @@ def _load_dotenv(env_file_path: Optional[str] = None) -> Optional[str]:
     hermes_home = os.environ.get("HERMES_HOME", os.path.expanduser("~/.hermes"))
     candidates.append(Path(hermes_home) / ".env")
 
-    mnemosyne_home = os.environ.get("MNEMOSYNE_HOME", os.path.expanduser("~/.mnemosyne"))
+    mnemosyne_home = os.environ.get("MNEMOSYNE_HOME", str(_paths.home()))
     candidates.append(Path(mnemosyne_home) / ".env")
 
     try:
