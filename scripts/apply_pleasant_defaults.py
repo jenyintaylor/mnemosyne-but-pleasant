@@ -82,7 +82,11 @@ def path_expression(node, prefix='_paths', hint=''):
         elif base in {'Path(hermes_home)', 'Path(hermes_home).expanduser()'}:
             hint = 'hermes_home'
     elif base in {'_mnemosyne_root', 'Path(_MNEMOSYNE_HOME)'}:
-        pass
+        # These names also occur in source/import discovery. Only storage
+        # suffixes belong to this policy, not the bare root or plugin paths.
+        if (not tail or not isinstance(tail[0], ast.Constant)
+                or tail[0].value not in {'data', 'logs', 'models', 'blobs', 'backups'}):
+            return None
     else:
         return None
     names = {'data': 'data_dir', 'logs': 'log_dir', 'models': 'model_cache_dir',
@@ -136,6 +140,17 @@ def transform(source, filename):
             key = (filename, name)
             if key in ASSIGNMENTS:
                 edit(node.value, ASSIGNMENTS[key])
+                return
+            # The root provider relies on BeamMemory's implicit default, while
+            # the packaged provider has the explicit db_path ternary below.
+            # Handle the known call here instead of a workflow-only pre-edit.
+            if (provider and in_function and len(targets) == 1
+                    and text(targets[0]) == 'self._beam'
+                    and isinstance(node.value, ast.Call)
+                    and text(node.value) == 'BeamMemory(session_id=self._session_id)'):
+                edit(node.value,
+                     f'BeamMemory(session_id=self._session_id, '
+                     f'db_path={prefix}.db_path(self._hermes_home))')
                 return
             if provider and in_function and name == 'db_path':
                 candidate = node.value.body if isinstance(node.value, ast.IfExp) else node.value
