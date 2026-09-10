@@ -8,6 +8,8 @@ in-row content with a stub and a blob reference in metadata.
 Blob storage: ~/.hermes/mnemosyne/blobs/<hash[0:2]>/<hash[0:4]>/<full-hash>
 """
 
+from mnemosyne import paths as _paths
+
 import base64
 import hashlib
 import math
@@ -30,11 +32,7 @@ DATA_URI_RE = re.compile(
 
 
 def _blob_root() -> Path:
-    """Root directory for content-addressed blobs."""
-    root = os.environ.get("MNEMOSYNE_BLOB_DIR", "")
-    if root:
-        return Path(root)
-    return Path.home() / ".hermes" / "mnemosyne" / "blobs"
+    return _paths.blob_dir()
 
 
 def _compute_sha256(data: bytes) -> str:

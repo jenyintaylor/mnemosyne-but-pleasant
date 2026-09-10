@@ -7,6 +7,8 @@ stays behaviorally identical.
 
 from __future__ import annotations
 
+from mnemosyne import paths as _paths
+
 import logging
 import os
 from pathlib import Path
@@ -19,7 +21,7 @@ PERSONA_FILE_ENV = "MNEMOSYNE_PERSONA_FILE"
 PERSONA_TOKEN_CAP_ENV = "MNEMOSYNE_PERSONA_TOKEN_CAP"
 PERSONA_PROMPT_HEADER = "# L3 Persona (Active Behavioral Rules)"
 DEFAULT_PERSONA_TOKEN_CAP = 1500
-DEFAULT_PERSONA_FILE = Path.home() / ".hermes" / "memory" / "persona.md"
+DEFAULT_PERSONA_FILE = _paths.persona_file()
 
 
 def _parse_env_bool(key: str, default: bool) -> bool:

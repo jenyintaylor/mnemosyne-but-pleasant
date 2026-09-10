@@ -19,6 +19,8 @@ Benefits:
 - CPU-efficient (bitwise XOR + popcount)
 """
 
+from mnemosyne import paths as _paths
+
 import numpy as np
 import sqlite3
 from typing import List, Dict
@@ -64,7 +66,7 @@ class BinaryVectorStore:
             self.conn = conn
             self.db_path = db_path or Path(":memory:")
         else:
-            self.db_path = db_path or Path.home() / ".hermes" / "mnemosyne" / "data" / "mnemosyne.db"
+            self.db_path = db_path or _paths.db_path()
             self.conn = sqlite3.connect(str(self.db_path), check_same_thread=False)
         self.table_name = table_name
         self.conn.row_factory = sqlite3.Row

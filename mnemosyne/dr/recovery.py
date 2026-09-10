@@ -4,6 +4,8 @@ Mnemosyne Disaster Recovery System
 Comprehensive backup, restore, and integrity verification for Mnemosyne.
 """
 
+from mnemosyne import paths as _paths
+
 import gzip
 import io
 import os
@@ -17,30 +19,7 @@ from typing import Dict, List
 
 
 def get_default_paths():
-    """Get default Mnemosyne paths.
-
-    These MUST resolve to the same location the live store uses (see
-    ``mnemosyne.core.beam``), or backup/restore -- and ``mnemosyne reindex``'s
-    auto-backup -- operate on a different database than the one in use. The
-    precedence mirrors beam:
-
-    * data dir: ``MNEMOSYNE_DATA_DIR`` if set, else
-      ``$HERMES_HOME/mnemosyne/data`` (``HERMES_HOME`` defaults to ``~/.hermes``).
-    * backups: ``MNEMOSYNE_BACKUP_DIR`` if set, else a ``backups`` dir alongside
-      the data dir.
-
-    Previously this hardcoded ``~/.mnemosyne/data``, which disagreed with the
-    store whenever ``MNEMOSYNE_DATA_DIR`` or ``HERMES_HOME`` was set, so
-    operations failed with "Database not found".
-    """
-    if os.environ.get("MNEMOSYNE_DATA_DIR"):
-        data_dir = Path(os.environ["MNEMOSYNE_DATA_DIR"])
-    else:
-        root = Path(os.environ.get("HERMES_HOME", Path.home() / ".hermes"))
-        data_dir = root / "mnemosyne" / "data"
-    backup_dir = Path(os.environ.get("MNEMOSYNE_BACKUP_DIR", data_dir.parent / "backups"))
-    db_path = data_dir / "mnemosyne.db"
-    return data_dir, backup_dir, db_path
+    return _paths.data_dir(), _paths.backup_dir(), _paths.db_path()
 
 
 def create_backup(db_path: Path = None, backup_dir: Path = None) -> Dict:

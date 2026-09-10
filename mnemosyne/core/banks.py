@@ -21,6 +21,8 @@ API:
     Mnemosyne(bank="work")  # All operations isolated to work bank
 """
 
+from mnemosyne import paths as _paths
+
 import os
 import shutil
 import sqlite3
@@ -29,19 +31,13 @@ from typing import List
 
 # On Fly.io and other ephemeral VMs, only ~/.hermes is persisted.
 _DEFAULT_ROOT = Path(os.environ.get("HERMES_HOME", Path.home() / ".hermes"))
-DEFAULT_DATA_DIR = _DEFAULT_ROOT / "mnemosyne" / "data"
+DEFAULT_DATA_DIR = _paths.data_dir()
 BANKS_DIR = DEFAULT_DATA_DIR / "banks"
 
-if os.environ.get("MNEMOSYNE_DATA_DIR"):
-    DEFAULT_DATA_DIR = Path(os.environ.get("MNEMOSYNE_DATA_DIR"))
-    BANKS_DIR = DEFAULT_DATA_DIR / "banks"
 
 
 def _default_data_dir() -> Path:
-    """Return the current default data directory, honoring runtime env changes."""
-    if os.environ.get("MNEMOSYNE_DATA_DIR"):
-        return Path(os.environ["MNEMOSYNE_DATA_DIR"])
-    return DEFAULT_DATA_DIR
+    return _paths.data_dir()
 
 
 class BankManager:

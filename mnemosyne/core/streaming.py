@@ -14,6 +14,8 @@ Delta sync:
 - Incremental: track sync checkpoints per peer
 """
 
+from mnemosyne import paths as _paths
+
 import json
 import logging
 import threading
@@ -285,7 +287,7 @@ class DeltaSync:
         if not isinstance(mnemosyne_instance, Mnemosyne):
             raise TypeError("DeltaSync requires a Mnemosyne instance")
         self.mnemosyne = mnemosyne_instance
-        self.checkpoint_dir = checkpoint_dir or (Path.home() / ".hermes" / "mnemosyne" / "sync")
+        self.checkpoint_dir = checkpoint_dir or (_paths.home() / 'sync')
         self.checkpoint_dir.mkdir(parents=True, exist_ok=True)
         # Keyed by (peer_id, table) — see _checkpoint_path docstring.
         self._checkpoints: Dict[Any, SyncCheckpoint] = {}

@@ -13,6 +13,8 @@ Plugin discovery loads plugins from ~/.hermes/mnemosyne/plugins/
 and built-in plugins are always available.
 """
 
+from mnemosyne import paths as _paths
+
 import abc
 import importlib
 import importlib.util
@@ -26,7 +28,7 @@ from types import ModuleType
 from typing import Any, Callable, Dict, List, Optional, Type
 
 # Plugin directory under ~/.hermes
-DEFAULT_PLUGIN_DIR = Path.home() / ".hermes" / "mnemosyne" / "plugins"
+DEFAULT_PLUGIN_DIR = _paths.home() / 'plugins'
 
 logger = logging.getLogger(__name__)
 

@@ -14,6 +14,8 @@ Trigger conditions (matches Hy-Memory PersonaTrigger pattern):
 
 from __future__ import annotations
 
+from mnemosyne import paths as _paths
+
 import logging
 import os
 import tempfile
@@ -35,12 +37,7 @@ DEFAULT_DAILY_SYNC_HOUR = int(os.environ.get("MNEMOSYNE_PERSONA_DAILY_SYNC_HOUR"
 # Token cap for persona.md.
 DEFAULT_TOKEN_CAP = int(os.environ.get("MNEMOSYNE_PERSONA_TOKEN_CAP", "1500"))
 
-DEFAULT_PERSONA_FILE = Path(
-    os.environ.get(
-        "MNEMOSYNE_PERSONA_FILE",
-        str(Path.home() / ".hermes" / "memory" / "persona.md"),
-    )
-)
+DEFAULT_PERSONA_FILE = _paths.persona_file()
 
 
 class PersonaExtractor:

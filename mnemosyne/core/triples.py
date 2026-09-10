@@ -25,6 +25,8 @@ now routes writes to `AnnotationStore` and emits a DeprecationWarning so
 new code uses the right store directly.
 """
 
+from mnemosyne import paths as _paths
+
 import os
 import sqlite3
 import tempfile
@@ -32,8 +34,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import List, Dict
 
-LEGACY_DATA_DIR = Path.home() / ".hermes" / "mnemosyne" / "data"
-DEFAULT_DATA_DIR = Path(os.environ.get("MNEMOSYNE_DATA_DIR", LEGACY_DATA_DIR))
+LEGACY_DATA_DIR = _paths.data_dir()
+DEFAULT_DATA_DIR = _paths.data_dir()
 DEFAULT_DB = DEFAULT_DATA_DIR / "triples.db"
 LEGACY_DB = LEGACY_DATA_DIR / "triples.db"
 

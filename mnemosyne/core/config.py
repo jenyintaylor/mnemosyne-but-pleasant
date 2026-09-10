@@ -18,6 +18,8 @@ Usage:
 
 from __future__ import annotations
 
+from mnemosyne import paths as _paths
+
 import logging
 import os
 import threading
@@ -65,6 +67,10 @@ REQUIRES_RESTART: Set[str] = {
 # Mapping from config key (snake_case, no MNEMOSYNE_ prefix) to env var name.
 # This is the canonical bridge between config.yaml keys and env vars.
 ENV_VAR_MAP: Dict[str, str] = {
+    'log_dir': 'MNEMOSYNE_LOG_DIR',
+    'model_cache_dir': 'MNEMOSYNE_MODEL_CACHE_DIR',
+    'persona_file': 'MNEMOSYNE_PERSONA_FILE',
+    'local_llm_enabled': 'MNEMOSYNE_LOCAL_LLM_ENABLED',
     # Paths
     "data_dir": "MNEMOSYNE_DATA_DIR",
     "home": "MNEMOSYNE_HOME",
@@ -206,6 +212,10 @@ CONFIG_KEY_MAP: Dict[str, str] = {v: k for k, v in ENV_VAR_MAP.items()}
 # These are written to config.yaml on first access (seed).
 # They match the hardcoded defaults in beam.py and other modules.
 DEFAULTS: Dict[str, Any] = {
+    'log_dir': '',
+    'model_cache_dir': '',
+    'persona_file': '',
+    'local_llm_enabled': False,
     # Paths — empty means use the codebase default
     "data_dir": "",
     "home": "",
@@ -343,14 +353,7 @@ DEFAULTS: Dict[str, Any] = {
 
 
 def _default_config_path() -> Path:
-    """Resolve the config.yaml path."""
-    data_dir = os.environ.get("MNEMOSYNE_DATA_DIR")
-    if data_dir:
-        return Path(data_dir) / "config.yaml"
-    hermes_home = os.environ.get("HERMES_HOME")
-    if hermes_home:
-        return Path(hermes_home) / "mnemosyne" / "config.yaml"
-    return Path.home() / ".hermes" / "mnemosyne" / "config.yaml"
+    return _paths.config_path()
 
 
 @dataclass(frozen=True)
