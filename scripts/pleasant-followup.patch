@@ -1,0 +1,360 @@
+diff --git a/README.md b/README.md
+index b2aa84e..c1a3256 100644
+--- a/README.md
++++ b/README.md
+@@ -1 +1,3 @@
++> **Fork behavior:** Mnemosyne storage defaults to `~/.hermes/memories/mnemosyne/`; local GGUF inference and downloads default off without disabling Hermes/Codex. See [configuration, installation, and migration](docs/pleasant-defaults.md).
++
+ <div align="center">
+@@ -322,3 +324,3 @@ When client-side encryption is enabled, the remote sync server sees **only metad
+ |----------|---------|-------------|
+-| `MNEMOSYNE_DATA_DIR` | `~/.hermes/mnemosyne/data` | Database directory |
++| `MNEMOSYNE_DATA_DIR` | `~/.hermes/memories/mnemosyne/data` | Database directory |
+ | `MNEMOSYNE_JOURNAL_MODE` | `wal` | SQLite journal mode for store connections (memory, beam, query cache, veracity consolidator; the sync client rides the beam connection). Valid: `delete`, `truncate`, `persist`, `memory`, `wal`, `off`; the value is trimmed and lower-cased, unset or blank falls back to `wal`, and non-blank invalid values warn and fall back to `wal`. Set `delete` on filesystems where WAL corrupts reads (Linux containers on macOS virtiofs). Only `wal` persists in the database file; every other mode is per-connection and reverts to SQLite's default (`delete`) on reopen, so each connection re-applies the mode itself. `memory` and `off` remove disk-backed rollback protection and can corrupt the database after a crash. |
+diff --git a/docs/configuration.md b/docs/configuration.md
+index 2d7c8bd..e74ce82 100644
+--- a/docs/configuration.md
++++ b/docs/configuration.md
+@@ -2,2 +2,4 @@
+ 
++For this fork's canonical storage paths and opt-in local LLM policy, see [Pleasant defaults](pleasant-defaults.md).
++
+ Mnemosyne is designed to work with zero configuration. All settings have sensible defaults and are overridden via environment variables.
+@@ -15,6 +17,6 @@ Mnemosyne is designed to work with zero configuration. All settings have sensibl
+ ```bash
+-MNEMOSYNE_DATA_DIR=~/.hermes/mnemosyne/data
++MNEMOSYNE_DATA_DIR=~/.hermes/memories/mnemosyne/data
+ ```
+ 
+-Default: `~/.hermes/mnemosyne/data`
++Default: `~/.hermes/memories/mnemosyne/data`
+ 
+@@ -265,2 +267,3 @@ See [Health and repair](cli-reference.md#health-and-repair) for the `reindex` co
+ | `MNEMOSYNE_LLM_ENABLED` | `true` | Global gate for host, remote, and local LLM-backed consolidation. Resolved from the environment when the local-LLM module is imported; currently not controlled by `config.yaml` `llm_enabled`. |
++| `MNEMOSYNE_LOCAL_LLM_ENABLED` | `false` | Explicit opt-in to local GGUF inference/downloads. YAML `local_llm_enabled` takes precedence. Host/remote LLM calls do not require this. |
+ | `MNEMOSYNE_LLM_N_CTX` | `2048` | Context window size for the local model |
+@@ -270,3 +273,3 @@ See [Health and repair](cli-reference.md#health-and-repair) for the `reindex` co
+ | `MNEMOSYNE_LLM_FILE` | `MiniCPM5-1B-Q4_K_M.gguf` | GGUF filename |
+-| `MNEMOSYNE_MODEL_CACHE_DIR` | `~/.hermes/mnemosyne/models` | Directory the GGUF model is cached in |
++| `MNEMOSYNE_MODEL_CACHE_DIR` | `~/.hermes/memories/mnemosyne/models` | Directory the GGUF model is cached in |
+ | `MNEMOSYNE_SLEEP_PROMPT` | *(built-in)* | Optional sleep/consolidation prompt override. Supports `{source}`, `{memories}`, and `{memory_count}` placeholders for language-specific summaries. |
+@@ -275,3 +278,5 @@ See [Health and repair](cli-reference.md#health-and-repair) for the `reindex` co
+ 
+-When the gate is enabled and neither a usable host backend nor a configured remote endpoint succeeds, Mnemosyne falls back to the local GGUF model. The default `MiniCPM5-1B-Q4_K_M.gguf` model is approximately 656 MB and is cached in `~/.hermes/mnemosyne/models`, or in `MNEMOSYNE_MODEL_CACHE_DIR` when that is set. `sleep()` is synchronous, so the first uncached local fallback can block while it downloads the model from Hugging Face. To avoid a download, set `MNEMOSYNE_LLM_ENABLED=false` for AAAK-only consolidation or pre-cache the GGUF model; a cached local fallback does not require network access.
++In this fork, failure of a host/remote call does **not** enable local inference or downloads. Local GGUF fallback is attempted only when `local_llm_enabled` is explicitly `true`. With its default `false`, the existing non-LLM fallback is used and cached GGUF files are not loaded. Keep the global LLM gate enabled for Hermes/Codex.
++
++When explicitly opted in, the default `MiniCPM5-1B-Q4_K_M.gguf` model is approximately 656 MB. Its cache defaults to `~/.hermes/memories/mnemosyne/models`, with `model_cache_dir` / `MNEMOSYNE_MODEL_CACHE_DIR` overrides. The first uncached local use is synchronous and can download this model. See [fork defaults](pleasant-defaults.md).
+ 
+@@ -288,3 +293,3 @@ Use a remote model instead of the local MiniCPM5-1B GGUF:
+ 
+-With `MNEMOSYNE_LLM_ENABLED` enabled, Mnemosyne uses the remote endpoint when no host call was attempted, an explicit or provider-preset-resolved remote base URL is available, and `MNEMOSYNE_FORCE_LOCAL` is not enabled. On failure it falls back to the local GGUF backend, then AAAK encoding.
++With `MNEMOSYNE_LLM_ENABLED` enabled, Mnemosyne uses the remote endpoint when no host call was attempted, an explicit or provider-preset-resolved remote base URL is available, and `MNEMOSYNE_FORCE_LOCAL` is not enabled. On failure it uses local GGUF only when `local_llm_enabled` is explicitly true; otherwise it goes directly to the non-LLM fallback.
+ 
+@@ -460,3 +465,3 @@ key list, and [docs/sync.md](sync.md) for usage and
+ # ~/.bashrc or .env
+-export MNEMOSYNE_DATA_DIR=~/.hermes/mnemosyne/data
++export MNEMOSYNE_DATA_DIR=~/.hermes/memories/mnemosyne/data
+ export MNEMOSYNE_VEC_TYPE=int8
+diff --git a/docs/hermes-llm-integration.md b/docs/hermes-llm-integration.md
+index 3412d4e..5f4460b 100644
+--- a/docs/hermes-llm-integration.md
++++ b/docs/hermes-llm-integration.md
+@@ -2,2 +2,8 @@
+ 
++> **This fork:** local GGUF inference and downloads are disabled by default.
++> A failed host call uses the existing non-LLM fallback unless you explicitly set
++> `local_llm_enabled: true` (or `MNEMOSYNE_LOCAL_LLM_ENABLED=true` without a YAML override).
++> Keep `MNEMOSYNE_LLM_ENABLED=true` and `MNEMOSYNE_HOST_LLM_ENABLED=true` for Hermes/Codex.
++> See [fork defaults and migration](pleasant-defaults.md).
++
+ When Mnemosyne runs as a Hermes memory provider, it can optionally route its
+@@ -33,3 +39,3 @@ when Mnemosyne is loaded as a Hermes memory provider):
+    - On failure (errors, empty response, no extractable content):
+-     skip MNEMOSYNE_LLM_BASE_URL entirely. Fall to the local GGUF path,
++     skip MNEMOSYNE_LLM_BASE_URL entirely. Fall to the local GGUF path only when explicitly enabled,
+      then return None / [].
+@@ -37,3 +43,3 @@ when Mnemosyne is loaded as a Hermes memory provider):
+    AND MNEMOSYNE_HOST_LLM_ENABLED is unset/false).
+-2. Local llama-cpp-python / ctransformers GGUF (MiniCPM5-1B by default).
++2. Local llama-cpp-python / ctransformers GGUF, only with local_llm_enabled=true.
+ 3. Return None (consolidation) or [] (extraction) — caller falls back to
+diff --git a/mnemosyne/cli.py b/mnemosyne/cli.py
+index c3b5126..f2d2a5c 100644
+--- a/mnemosyne/cli.py
++++ b/mnemosyne/cli.py
+@@ -91,3 +91,3 @@ def _resolve_doctor_bank_db_path(bank_name: str) -> Path:
+     if bank_name == "default":
+-        return data_dir / "mnemosyne.db"
++        return _paths.db_path()
+     bank_dir = data_dir / "banks" / bank_name
+@@ -129,3 +129,3 @@ def _get_memory():
+     try:
+-        db_path = bm.get_bank_db_path(bank)
++        db_path = _paths.db_path() if bank == "default" else bm.get_bank_db_path(bank)
+     except ValueError as e:
+@@ -1124,3 +1124,3 @@ def cmd_verify(args):
+             import sqlite3
+-            db = db_path or Path(DATA_DIR) / "mnemosyne.db"
++            db = db_path or _paths.db_path()
+             conn = sqlite3.connect(str(db))
+@@ -1328,3 +1328,3 @@ def cmd_hygiene(args):
+ 
+-        db_path = Path(DATA_DIR) / "mnemosyne.db"
++        db_path = _paths.db_path()
+         if not db_path.exists():
+@@ -1382,3 +1382,3 @@ def cmd_hygiene(args):
+                 _fail(f"Unknown hygiene status option: {rest[i]}")
+-        db_path = Path(DATA_DIR) / "mnemosyne.db"
++        db_path = _paths.db_path()
+         if not db_path.exists():
+@@ -1474,3 +1474,3 @@ def cmd_hygiene(args):
+ 
+-        db_path = Path(DATA_DIR) / "mnemosyne.db"
++        db_path = _paths.db_path()
+         if not db_path.exists():
+@@ -1505,3 +1505,3 @@ def cmd_hygiene(args):
+ 
+-        db_path = Path(DATA_DIR) / "mnemosyne.db"
++        db_path = _paths.db_path()
+         if not db_path.exists():
+@@ -1710,3 +1710,3 @@ def cmd_migrate(args):
+     try:
+-        db_path = bm.get_bank_db_path(bank)
++        db_path = _paths.db_path() if bank == "default" else bm.get_bank_db_path(bank)
+     except ValueError as e:
+diff --git a/mnemosyne/core/banks.py b/mnemosyne/core/banks.py
+index 9a2ca0b..7bd5c61 100644
+--- a/mnemosyne/core/banks.py
++++ b/mnemosyne/core/banks.py
+@@ -6,3 +6,3 @@ Provides named memory banks that are fully isolated at the database level.
+ Each bank gets its own SQLite file under:
+-    ~/.hermes/mnemosyne/data/banks/<bank_name>/mnemosyne.db
++    ~/.hermes/memories/mnemosyne/data/banks/<bank_name>/mnemosyne.db
+ 
+@@ -51,3 +51,5 @@ class BankManager:
+     def __init__(self, data_dir: Path = None):
+-        self.data_dir = data_dir or _default_data_dir()
++        self.data_dir = Path(data_dir) if data_dir is not None else _default_data_dir()
++        self._default_db = (self.data_dir / "mnemosyne.db"
++                            if data_dir is not None else _paths.db_path())
+         self.banks_dir = self.data_dir / "banks"
+@@ -124,3 +126,3 @@ class BankManager:
+ 
+-        The 'default' bank uses the legacy path (data_dir/mnemosyne.db).
++        The default bank honors the configured DB path unless a data_dir was passed.
+         All other banks use banks_dir/<name>/mnemosyne.db.
+@@ -128,3 +130,3 @@ class BankManager:
+         if name == "default":
+-            return self.data_dir / "mnemosyne.db"
++            return self._default_db
+         self._validate_name(name)
+@@ -229,3 +231,3 @@ def get_bank_db_path_read_only(name: str, data_dir: Path = None) -> Path:
+     if name == "default":
+-        return resolved / "mnemosyne.db"
++        return resolved / "mnemosyne.db" if data_dir is not None else _paths.db_path()
+ 
+diff --git a/mnemosyne/core/config.py b/mnemosyne/core/config.py
+index ff1ac75..7f89c17 100644
+--- a/mnemosyne/core/config.py
++++ b/mnemosyne/core/config.py
+@@ -38,2 +38,6 @@ logger = logging.getLogger(__name__)
+ REQUIRES_RESTART: Set[str] = {
++    "log_dir",
++    "model_cache_dir",
++    "persona_file",
++    "local_llm_enabled",
+     "data_dir",
+diff --git a/mnemosyne/core/content_sanitizer.py b/mnemosyne/core/content_sanitizer.py
+index c021bd5..66622df 100644
+--- a/mnemosyne/core/content_sanitizer.py
++++ b/mnemosyne/core/content_sanitizer.py
+@@ -7,3 +7,3 @@ in-row content with a stub and a blob reference in metadata.
+ 
+-Blob storage: ~/.hermes/mnemosyne/blobs/<hash[0:2]>/<hash[0:4]>/<full-hash>
++Blob storage: ~/.hermes/memories/mnemosyne/blobs/<hash[0:2]>/<hash[0:4]>/<full-hash>
+ """
+diff --git a/mnemosyne/core/embeddings.py b/mnemosyne/core/embeddings.py
+index 546d4b2..143fbbe 100644
+--- a/mnemosyne/core/embeddings.py
++++ b/mnemosyne/core/embeddings.py
+@@ -52,10 +52,4 @@ def _is_fastembed_available() -> bool:
+ _FASTEMBED_AVAILABLE = _is_fastembed_available()
+-# Allow CI / scripted environments to redirect the fastembed cache to a
+-# stable path that can be restored by actions/cache. Defaults to
+-# <HERMES_HOME>/cache/fastembed, falling back to ~/.hermes/cache/fastembed
+-# when HERMES_HOME is unset. Respecting HERMES_HOME keeps the cache co-located
+-# with the rest of Hermes' state (config, db, logs) instead of leaking a
+-# separate ~/.hermes directory when a user relocates HERMES_HOME (e.g. to
+-# ~/.config/hermes). Matches the HERMES_HOME handling already used elsewhere
+-# in the package (see mcp_tools.py).
++# Local embedding models share the canonical Mnemosyne storage root by default.
++# Explicit fastembed_cache_dir / MNEMOSYNE_FASTEMBED_CACHE_DIR still override it.
+ _FASTEMBED_CACHE_DIR = str(_paths.fastembed_cache_dir())
+diff --git a/mnemosyne/core/local_llm.py b/mnemosyne/core/local_llm.py
+index a952b30..4b10661 100644
+--- a/mnemosyne/core/local_llm.py
++++ b/mnemosyne/core/local_llm.py
+@@ -7,3 +7,3 @@ Falls back to aaak encoding if the model is unavailable or inference fails.
+ 
+-Model cache: ~/.hermes/mnemosyne/models/
++Model cache: ~/.hermes/memories/mnemosyne/models/
+ Default model: openbmb/MiniCPM5-1B-GGUF (Q4_K_M, ~656MB)
+@@ -39,4 +39,4 @@ if _env_repo and _env_file:
+ 
+-# Override the cache location via env. Environment-only and read at import, like
+-# the repo/file overrides above. Unset or blank keeps the historical path.
++# The canonical path resolver above honors YAML, environment, then defaults.
++# Cache paths are captured at import; restart after changing them.
+ #
+diff --git a/mnemosyne/core/plugins.py b/mnemosyne/core/plugins.py
+index 474a504..c85affb 100644
+--- a/mnemosyne/core/plugins.py
++++ b/mnemosyne/core/plugins.py
+@@ -11,3 +11,3 @@ Plugins can hook into memory lifecycle events:
+ 
+-Plugin discovery loads plugins from ~/.hermes/mnemosyne/plugins/
++Plugin discovery loads plugins from ~/.hermes/memories/mnemosyne/plugins/
+ and built-in plugins are always available.
+@@ -439,3 +439,3 @@ class PluginManager:
+     - Built-in plugins (LoggingPlugin, MetricsPlugin, FilterPlugin, CompressionPlugin)
+-    - External plugins discovered from ~/.hermes/mnemosyne/plugins/
++    - External plugins discovered from ~/.hermes/memories/mnemosyne/plugins/
+     - Manual registration of plugin classes
+@@ -580,3 +580,3 @@ class PluginManager:
+ 
+-        Scans ~/.hermes/mnemosyne/plugins/ for Python files and
++        Scans ~/.hermes/memories/mnemosyne/plugins/ for Python files and
+         registers any MnemosynePlugin subclasses found.
+diff --git a/mnemosyne/diagnose.py b/mnemosyne/diagnose.py
+index 015327f..edceddb 100644
+--- a/mnemosyne/diagnose.py
++++ b/mnemosyne/diagnose.py
+@@ -5,4 +5,4 @@ PII-safe debug logging for troubleshooting installation and runtime issues.
+ 
+-Logs to $HERMES_HOME/mnemosyne/logs/diagnose_YYYY-MM-DD_HHMMSS.jsonl,
+-or ~/.hermes/mnemosyne/logs when HERMES_HOME is unset.
++Logs to $HERMES_HOME/memories/mnemosyne/logs/diagnose_YYYY-MM-DD_HHMMSS.jsonl,
++or ~/.hermes/memories/mnemosyne/logs when HERMES_HOME is unset.
+ Never includes memory content, user queries, or API keys.
+diff --git a/mnemosyne/dr/recovery.py b/mnemosyne/dr/recovery.py
+index d672c0a..6feae67 100644
+--- a/mnemosyne/dr/recovery.py
++++ b/mnemosyne/dr/recovery.py
+@@ -111,3 +111,3 @@ def restore_backup(backup_path: Path, db_path: Path = None) -> Dict:
+         backup_path: Path to the .gz backup file
+-        db_path: Destination database path (default: ~/.mnemosyne/data/mnemosyne.db)
++        db_path: Destination database path (default: ~/.hermes/memories/mnemosyne/data/mnemosyne.db)
+         
+diff --git a/mnemosyne/mcp_server.py b/mnemosyne/mcp_server.py
+index 13a632f..67eb722 100644
+--- a/mnemosyne/mcp_server.py
++++ b/mnemosyne/mcp_server.py
+@@ -522,3 +522,3 @@ def _load_dotenv(env_file_path: Optional[str] = None) -> Optional[str]:
+     2. $HERMES_HOME/.env or ~/.hermes/.env
+-    3. $MNEMOSYNE_HOME/.env or ~/.mnemosyne/.env
++    3. $MNEMOSYNE_HOME/.env or the canonical Mnemosyne home/.env
+     4. ./.env (current working directory)
+diff --git a/scripts/generate-docs.py b/scripts/generate-docs.py
+index f863021..f282280 100644
+--- a/scripts/generate-docs.py
++++ b/scripts/generate-docs.py
+@@ -227,5 +227,9 @@ def _collect_config() -> tuple:
+ CONFIG_DESCRIPTIONS = {
++    "log_dir": "Directory for Mnemosyne diagnostics and cost_log.db. Defaults to home/logs.",
++    "model_cache_dir": "Local GGUF cache directory. Defaults to home/models; local inference is separately opt-in.",
++    "persona_file": "Generated persona file. Defaults to home/persona.md.",
++    "local_llm_enabled": "Allow local GGUF inference and downloads. False by default; does not disable host or remote LLM calls.",
+     # Paths
+-    "data_dir": "Root directory for all Mnemosyne data. Overrides the `$HERMES_HOME` default.",
+-    "home": "Base Hermes home directory used to derive default paths.",
++    "data_dir": "Database/bank directory. Defaults to home/data; logs and caches remain under home.",
++    "home": "Mnemosyne storage root (not Hermes home). Defaults to $HERMES_HOME/memories/mnemosyne.",
+     "db_path": "Explicit path to the primary SQLite database file.",
+@@ -477,2 +481,3 @@ def _scan_effective_defaults(env_map: dict, defaults: dict) -> dict:
+ ENV_ONLY_DESCRIPTIONS = {
++    "MNEMOSYNE_CONFIG_PATH": "Absolute path to Mnemosyne config.yaml. Otherwise uses MNEMOSYNE_DATA_DIR/config.yaml or the default home/data/config.yaml. Bootstrap is environment-only.",
+     "MNEMOSYNE_AUTHOR_ID": "Identifier recorded as the author of new memories.",
+@@ -503,4 +508,2 @@ ENV_ONLY_DESCRIPTIONS = {
+     "MNEMOSYNE_MCP_TOKEN": "Bearer token for MCP HTTP (SSE and Streamable HTTP) auth. Required for any non-loopback bind, which exposes the selected local SQLite-backed memory bank to network clients.",
+-    "MNEMOSYNE_MODEL_CACHE_DIR": "Directory holding the local GGUF consolidation model. Unset or blank keeps `~/.hermes/mnemosyne/models`. Read at import; an explicitly set path is authoritative, so an unusable one fails rather than falling back to the default.",
+-    "MNEMOSYNE_PERSONA_FILE": "Path to an external persona facts file.",
+     "MNEMOSYNE_PREFETCH_MODEL_SLOT_LIMIT": "Maximum canonical slots prefetched per turn.",
+@@ -635,4 +638,4 @@ def _render_config(env_map, defaults, restart, version: str, effective=None) ->
+         "`config.yaml` lives at `$MNEMOSYNE_DATA_DIR/config.yaml`, falling back to",
+-        "`$HERMES_HOME/mnemosyne/config.yaml` and then `~/.hermes/mnemosyne/config.yaml`.",
+-        "Nested YAML works, and leaf keys resolve too, so `memory.mnemosyne.wm_max_items`",
++        "`$HERMES_HOME/memories/mnemosyne/data/config.yaml` (Hermes home defaults to `~/.hermes`). `MNEMOSYNE_CONFIG_PATH` overrides file discovery. Path entries use nonblank YAML > nonblank environment > derived default; blank seeded paths do not hide environment values.",
++        "Use flat path keys. Other settings support nested YAML and leaf keys, so `memory.mnemosyne.wm_max_items`",
+         "and `wm_max_items` are equivalent.",
+diff --git a/tests/test_diagnose_log_path.py b/tests/test_diagnose_log_path.py
+index 0058b3d..810d305 100644
+--- a/tests/test_diagnose_log_path.py
++++ b/tests/test_diagnose_log_path.py
+@@ -7,2 +7,2 @@ def test_diagnose_log_dir_honors_hermes_home(tmp_path, monkeypatch):
+ 
+-    assert diagnose._default_log_dir() == tmp_path / "hermes" / "mnemosyne" / "logs"
++    assert diagnose._default_log_dir() == tmp_path / "hermes" / "memories" / "mnemosyne" / "logs"
+diff --git a/tests/test_hermes_memory_provider.py b/tests/test_hermes_memory_provider.py
+index 0b486b7..8218e93 100644
+--- a/tests/test_hermes_memory_provider.py
++++ b/tests/test_hermes_memory_provider.py
+@@ -8,2 +8,4 @@ from __future__ import annotations
+ 
++from pathlib import Path
++
+ import json
+@@ -855,3 +857,6 @@ class TestInitializeProfileIsolation:
+         provider.initialize(session_id="test123", hermes_home="/some/path")
+-        beam_constructor.assert_called_once_with(session_id="hermes_test123")
++        beam_constructor.assert_called_once_with(
++            session_id="hermes_test123",
++            db_path=Path("/some/path/memories/mnemosyne/data/mnemosyne.db"),
++        )
+ 
+diff --git a/tests/test_local_llm.py b/tests/test_local_llm.py
+index b012cc5..6579c8f 100644
+--- a/tests/test_local_llm.py
++++ b/tests/test_local_llm.py
+@@ -94,2 +94,4 @@ class TestLocalModelDownloadNotice:
+         monkeypatch.setattr(local_llm, "_load_llm", REAL_LOAD_LLM)
++        # This test explicitly exercises opted-in local downloading/failure.
++        monkeypatch.setattr(local_llm, "_local_llm_enabled", lambda: True)
+         monkeypatch.setitem(sys.modules, "huggingface_hub", types.SimpleNamespace(hf_hub_download=failed_download))
+@@ -753,5 +755,5 @@ class TestModelCacheDirOverride:
+ 
+-    _DEFAULT = Path.home() / ".hermes" / "mnemosyne" / "models"
++    _DEFAULT = Path.home() / ".hermes" / "memories" / "mnemosyne" / "models"
+ 
+-    def test_unset_keeps_the_historical_location(self, monkeypatch):
++    def test_unset_keeps_the_fork_default_location(self, monkeypatch):
+         with _model_cache_env(monkeypatch, None) as module:
+@@ -761,3 +763,3 @@ class TestModelCacheDirOverride:
+     @pytest.mark.parametrize("blank", ["", "   ", "\t"])
+-    def test_blank_value_keeps_the_historical_location(self, monkeypatch, blank):
++    def test_blank_value_keeps_the_fork_default_location(self, monkeypatch, blank):
+         """Per spec, unset and empty behave identically."""
+@@ -946,3 +948,3 @@ class TestModelCacheDirOverride:
+         self._select(monkeypatch, blocker / "models")
+-        default = Path.home() / ".hermes" / "mnemosyne" / "models"
++        default = Path.home() / ".hermes" / "memories" / "mnemosyne" / "models"
+ 
+diff --git a/tests/test_recovery_paths.py b/tests/test_recovery_paths.py
+index ba63141..cc71b63 100644
+--- a/tests/test_recovery_paths.py
++++ b/tests/test_recovery_paths.py
+@@ -25,4 +25,5 @@ def test_get_default_paths_honors_data_dir(monkeypatch, tmp_path):
+     assert db_path == tmp_path / "data" / "mnemosyne.db"
+-    # backups land alongside the data dir, not under ~/.mnemosyne
+-    assert backup_dir == tmp_path / "backups"
++    # A data-only override does not move the canonical log/backup root.
++    from mnemosyne import paths
++    assert backup_dir == paths.home() / "backups"
+ 
+@@ -34,5 +35,5 @@ def test_get_default_paths_honors_hermes_home(monkeypatch, tmp_path):
+     data_dir, backup_dir, db_path = recovery.get_default_paths()
+-    assert data_dir == tmp_path / "home" / "mnemosyne" / "data"
++    assert data_dir == tmp_path / "home" / "memories" / "mnemosyne" / "data"
+     assert db_path == data_dir / "mnemosyne.db"
+-    assert backup_dir == tmp_path / "home" / "mnemosyne" / "backups"
++    assert backup_dir == tmp_path / "home" / "memories" / "mnemosyne" / "backups"
+ 
